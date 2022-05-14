@@ -28,7 +28,7 @@ func Router(eventController *controllers.EventController) http.Handler {
 		apiRouter.Route("/v1", func(apiRouter chi.Router) {
 
 			apiRouter.Group(func(apiRouter chi.Router) {
-				AddEventRoutes(&apiRouter, eventController)
+				AddCrudRoutes(&apiRouter, eventController, "/events")
 
 				apiRouter.Handle("/*", NotFoundJSON())
 			})
@@ -37,17 +37,4 @@ func Router(eventController *controllers.EventController) http.Handler {
 	})
 
 	return router
-}
-
-func AddEventRoutes(router *chi.Router, eventController *controllers.EventController) {
-	(*router).Route("/events", func(apiRouter chi.Router) {
-		apiRouter.Get(
-			"/",
-			eventController.FindAll(),
-		)
-		apiRouter.Get(
-			"/{id}",
-			eventController.FindOne(),
-		)
-	})
 }
