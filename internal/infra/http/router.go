@@ -5,10 +5,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/test_server/internal/infra/http/controllers"
 )
 
-func Router(eventController *controllers.EventController) http.Handler {
+type routeInterface interface {
+	Register(chi.Router)
+}
+
+func Router(routes ...routeInterface) http.Handler {
 	router := chi.NewRouter()
 
 	// Health
@@ -26,12 +29,10 @@ func Router(eventController *controllers.EventController) http.Handler {
 		apiRouter.Use(middleware.RedirectSlashes)
 
 		apiRouter.Route("/v1", func(apiRouter chi.Router) {
+			for _, route := range routes {
+				route.Register(apiRouter)
+			}
 
-			apiRouter.Group(func(apiRouter chi.Router) {
-				AddCrudRoutes(&apiRouter, eventController, "/events")
-
-				apiRouter.Handle("/*", NotFoundJSON())
-			})
 			apiRouter.Handle("/*", NotFoundJSON())
 		})
 	})

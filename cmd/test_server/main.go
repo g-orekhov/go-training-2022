@@ -9,8 +9,10 @@ import (
 	"syscall"
 
 	"github.com/test_server/internal/domain/event"
+	"github.com/test_server/internal/domain/user"
 	"github.com/test_server/internal/infra/http"
 	"github.com/test_server/internal/infra/http/controllers"
+	"github.com/test_server/internal/infra/http/routes"
 )
 
 // @title                       Test Server
@@ -44,12 +46,19 @@ func main() {
 	eventRepository := event.NewRepository()
 	eventService := event.NewService(&eventRepository)
 	eventController := controllers.NewEventController(&eventService)
+	eventRoute := routes.NewEventRoute("/events", eventController)
+
+	userRepository := user.NewRepository()
+	userService := user.NewService(&userRepository)
+	userController := controllers.NewUserController(&userService)
+	userRoute := routes.NewUserRoute("/users", userController)
 
 	// HTTP Server
 	err := http.Server(
 		ctx,
 		http.Router(
-			eventController,
+			eventRoute,
+			userRoute,
 		),
 	)
 

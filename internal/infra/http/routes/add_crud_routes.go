@@ -1,4 +1,4 @@
-package http
+package routes
 
 import (
 	"net/http"
@@ -46,14 +46,14 @@ func AddCrudRoutes(router *chi.Router, controller interface{}, pattern string) {
 		updateController, ok := controller.(updateRoute)
 		if ok {
 			apiRouter.Put(
-				"/",
+				"/{id}",
 				updateController.Update(),
 			)
 		}
 		deleteController, ok := controller.(deleteRoute)
 		if ok {
 			apiRouter.Delete(
-				"/",
+				"/{id}",
 				deleteController.Delete(),
 			)
 		}
