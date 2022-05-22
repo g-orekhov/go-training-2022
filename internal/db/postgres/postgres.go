@@ -8,7 +8,6 @@ import (
 )
 
 func OpenDB() (db.Session, error) {
-	//TODO: recieve hardcoded params from function caller
 	var settings = postgresql.ConnectionURL{
 		User:     os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASSWORD"),
