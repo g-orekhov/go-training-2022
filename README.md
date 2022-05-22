@@ -6,11 +6,31 @@
 
 ## Events List
 
-`http://localhost:8081/v1/events`
+GET `http://localhost:8081/v1/events`
 
 ## Event (by ID)
 
-`http://localhost:8081/v1/events/{id}`
+GET `http://localhost:8081/v1/events/{id}`
+
+## Create Event
+
+JSON structure
+
+    "name": " ",
+    "short_descr": " ",
+    "description": " ",
+    "images": [" ", ...],
+    "preview_img": " "
+
+POST `http://localhost:8081/v1/events`
+
+## Update Event
+
+PUT `http://localhost:8081/v1/events/{id}`
+
+## Delete Event
+
+DELETE `http://localhost:8081/v1/events/{id}`
 
 ## Users List
 
