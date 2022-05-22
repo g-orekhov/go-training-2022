@@ -8,6 +8,8 @@ import (
 	"runtime/debug"
 	"syscall"
 
+	_ "github.com/joho/godotenv/autoload"
+	"github.com/test_server/internal/db/postgres"
 	"github.com/test_server/internal/domain/event"
 	"github.com/test_server/internal/domain/user"
 	"github.com/test_server/internal/infra/http"
@@ -42,10 +44,19 @@ func main() {
 		fmt.Printf("Sent cancel to all threads...")
 	}()
 
+	// Open DB session
+	session, db_err := postgres.OpenDB()
+	if db_err != nil {
+		fmt.Printf("database connection error: %s", db_err)
+		exitCode = 2
+		return
+	}
+	defer session.Close()
+	println("-", os.Getenv("HTTP_SERVER"))
 	// Event
-	eventRepository := event.NewRepository()
-	eventService := event.NewService(&eventRepository)
-	eventController := controllers.NewEventController(&eventService)
+	eventRepository := event.NewRepository(session)
+	eventService := event.NewService(eventRepository)
+	eventController := controllers.NewEventController(eventService)
 	eventRoute := routes.NewEventRoute("/events", eventController)
 	// User
 	userRepository := user.NewRepository()

@@ -1,4 +1,4 @@
-package routes
+package json_handlers
 
 import (
 	"encoding/json"

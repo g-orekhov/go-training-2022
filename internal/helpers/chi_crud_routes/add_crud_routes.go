@@ -1,4 +1,5 @@
-package routes
+// Author: HryhoriiOriekhov <gpm@ukr.net>
+package chi_crud_routes
 
 import (
 	"net/http"

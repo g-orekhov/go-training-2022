@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/test_server/internal/helpers/json_handlers"
 )
 
 type routeInterface interface {
@@ -21,7 +22,7 @@ func Router(routes ...routeInterface) http.Handler {
 		healthRouter.Route("/ping", func(healthRouter chi.Router) {
 			healthRouter.Get("/", PingHandler())
 
-			healthRouter.Handle("/*", NotFoundJSON())
+			healthRouter.Handle("/*", json_handlers.NotFoundJSON())
 		})
 	})
 
@@ -33,7 +34,7 @@ func Router(routes ...routeInterface) http.Handler {
 				route.Register(apiRouter)
 			}
 
-			apiRouter.Handle("/*", NotFoundJSON())
+			apiRouter.Handle("/*", json_handlers.NotFoundJSON())
 		})
 	})
 
