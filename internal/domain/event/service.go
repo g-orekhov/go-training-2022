@@ -42,5 +42,5 @@ func (s *service) Delete(id int64) error {
 }
 
 func (s *service) GetNearby(long, lat, distance float64) ([]Event, error) {
-	return s.repo.GetNearby(&Coords{long, lat}, distance)
+	return s.repo.GetNearby(&Coords{Long: long, Lat: lat}, distance)
 }

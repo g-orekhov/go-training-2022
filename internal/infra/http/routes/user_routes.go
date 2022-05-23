@@ -17,7 +17,10 @@ func NewUserRoute(pattern string, controller interface{}) *UserRoute {
 
 func (r *UserRoute) Register(apiRouter chi.Router) {
 	apiRouter.Group(func(apiRouter chi.Router) {
-		chi_crud_routes.AddCrudRoutes(&apiRouter, r.controller, r.pattern)
+		apiRouter.Route(r.pattern, func(apiRouter chi.Router) {
+			// add CRUD rotes
+			chi_crud_routes.AddCrudRoutes(apiRouter, r.controller)
+		})
 		apiRouter.Handle("/*", json_handlers.NotFoundJSON())
 	})
 }

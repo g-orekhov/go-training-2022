@@ -28,9 +28,18 @@ func NewEventRoute(pattern string, controller EventController) *EventRoute {
 
 func (r *EventRoute) Register(apiRouter chi.Router) {
 	apiRouter.Group(func(apiRouter chi.Router) {
-		chi_crud_routes.AddCrudRoutes(&apiRouter, r.controller, r.pattern)
+		// get EventController interface
 		controller, _ := r.controller.(EventController)
-		apiRouter.Get(r.pattern+"/geo/{lat},{long},{dist}", controller.GetNearby())
+		// Routes:
+		apiRouter.Route(r.pattern, func(apiRouter chi.Router) {
+			// add CRUD rotes
+			chi_crud_routes.AddCrudRoutes(apiRouter, r.controller)
+			// GetNearby
+			apiRouter.Get(
+				"/geo/{lat},{long},{dist}",
+				controller.GetNearby(),
+			)
+		})
 		apiRouter.Handle("/*", json_handlers.NotFoundJSON())
 	})
 }
