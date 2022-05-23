@@ -12,6 +12,13 @@ GET `http://localhost:8081/v1/events`
 
 GET `http://localhost:8081/v1/events/{id}`
 
+## Event (by Geolocation)
+
+GET `http://localhost:8081/v1/events/geo/{lat},{long},{dist}`
+
+ lat, long - decimals
+ dist - distance in meters
+
 ## Create Event
 
 JSON structure

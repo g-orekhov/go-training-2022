@@ -52,7 +52,7 @@ func main() {
 		return
 	}
 	defer session.Close()
-	println("-", os.Getenv("HTTP_SERVER"))
+
 	// Event
 	eventRepository := event.NewRepository(session)
 	eventService := event.NewService(eventRepository)

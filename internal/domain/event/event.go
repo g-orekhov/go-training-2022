@@ -9,6 +9,7 @@ type Event struct {
 	Images           []string `db:"images,omitempty" json:"images"`
 	ShortDescription string   `db:"short_descr,omitempty" json:"short_descr"`
 	PreviewImage     string   `db:"preview_img,omitempty" json:"preview_img"`
+	Coords           Coords   `db:"coords,omitempty" json:"coords"`
 }
 
 func (*Event) Store(sess db.Session) db.Store {

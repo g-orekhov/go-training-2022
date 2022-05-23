@@ -8,6 +8,7 @@ type Service interface {
 	Create(*Event) error
 	Update(id int64, decoder *json.Decoder) (*Event, error)
 	Delete(id int64) error
+	GetNearby(long, lat, distance float64) ([]Event, error)
 }
 
 type service struct {
@@ -38,4 +39,8 @@ func (s *service) Update(id int64, decoder *json.Decoder) (*Event, error) {
 
 func (s *service) Delete(id int64) error {
 	return s.repo.Delete(id)
+}
+
+func (s *service) GetNearby(long, lat, distance float64) ([]Event, error) {
+	return s.repo.GetNearby(&Coords{long, lat}, distance)
 }

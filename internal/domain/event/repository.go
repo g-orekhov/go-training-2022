@@ -2,6 +2,7 @@ package event
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/upper/db/v4"
 )
@@ -12,8 +13,10 @@ type Repository interface {
 	Create(*Event) error
 	Update(id int64, decoder *json.Decoder) (*Event, error)
 	Delete(id int64) error
+	GetNearby(coords *Coords, distance float64) ([]Event, error)
 }
 
+// TODO: change this value in the functions according to the pagination params
 const EventsCount int64 = 10
 
 type repository struct {
@@ -69,4 +72,12 @@ func (r *repository) Update(id int64, decoder *json.Decoder) (*Event, error) {
 		return nil, err
 	}
 	return event, nil
+}
+
+func (r *repository) GetNearby(coords *Coords, distance float64) ([]Event, error) {
+	events := make([]Event, 0, EventsCount)
+	fmt.Println("ST_DWithin(coords, %v, %v)", coords.String(), distance)
+	res := r.collection.Find("ST_DWithin(coords, ?, ?)", coords.String(), distance)
+	err := res.All(&events)
+	return events, err
 }
