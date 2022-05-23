@@ -2,7 +2,6 @@ package event
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/upper/db/v4"
 )
@@ -76,7 +75,6 @@ func (r *repository) Update(id int64, decoder *json.Decoder) (*Event, error) {
 
 func (r *repository) GetNearby(coords *Coords, distance float64) ([]Event, error) {
 	events := make([]Event, 0, EventsCount)
-	fmt.Println("ST_DWithin(coords, %v, %v)", coords.String(), distance)
 	res := r.collection.Find("ST_DWithin(coords, ?, ?)", coords.String(), distance)
 	err := res.All(&events)
 	return events, err

@@ -157,7 +157,7 @@ func (c *EventController) Update() http.HandlerFunc {
 
 func (c *EventController) GetNearby() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// get Lon, Lat
+		// get Long, Lat, Distance
 		lon, err := strconv.ParseFloat(chi.URLParam(r, "long"), 64)
 		if err != nil {
 			fmt.Printf("EventController.GetNearby(): %s", err)
@@ -182,21 +182,20 @@ func (c *EventController) GetNearby() http.HandlerFunc {
 			//TODO: set default value
 			dist = 10.0
 		}
-		fmt.Println(lon, lat, dist)
 
-		// update record
+		// search record
 		events, err := c.service.GetNearby(lon, lat, dist)
 		if err != nil {
-			fmt.Printf("EventController.Update(): %s", err)
+			fmt.Printf("EventController.GetNearby(): %s", err)
 			err = json_response.InternalServerError(w, err)
 			if err != nil {
-				fmt.Printf("EventController.Update(): %s", err)
+				fmt.Printf("EventController.GetNearby(): %s", err)
 			}
 			return
 		}
 		// return Success response
 		if err := json_response.Success(w, events); err != nil {
-			fmt.Printf("EventController.Update(): %s", err)
+			fmt.Printf("EventController.GetNearby(): %s", err)
 		}
 	}
 }
