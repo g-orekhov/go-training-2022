@@ -95,3 +95,31 @@ func (c *UserController) Create() http.HandlerFunc {
 		}
 	}
 }
+
+func (c *UserController) Delete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+		if err != nil {
+			fmt.Printf("UserController.Delete(): %s", err)
+			err = json_response.InternalServerError(w, err)
+			if err != nil {
+				fmt.Printf("UserController.Delete(): %s", err)
+			}
+			return
+		}
+
+		if err := c.service.Delete(id); err != nil {
+			fmt.Printf("UserController.Delete(): %s", err)
+			err = json_response.InternalServerError(w, err)
+			if err != nil {
+				fmt.Printf("UserController.Delete(): %s", err)
+			}
+			return
+		}
+
+		err = json_response.Success(w, nil)
+		if err != nil {
+			fmt.Printf("UserController.Delete(): %s", err)
+		}
+	}
+}

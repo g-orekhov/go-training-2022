@@ -4,6 +4,7 @@ type Service interface {
 	FindAll() ([]User, error)
 	FindOne(int64) (*User, error)
 	Create(*User) error
+	Delete(int64) error
 }
 
 type service struct {
@@ -26,4 +27,7 @@ func (s *service) FindOne(id int64) (*User, error) {
 
 func (s *service) Create(user *User) error {
 	return s.repo.Create(user)
+}
+func (s *service) Delete(id int64) error {
+	return s.repo.Delete(id)
 }

@@ -50,8 +50,11 @@ contract UsersStorage {
     function UsersDelete(uint64 id) public {
         require(UserIdToIndex[id].isExist);
         uint index = UserIdToIndex[id].index;
-        Users[index] = Users[Users.length - 1];
-        UserIdToIndex[Users[index].id].index = index;
+        if (Users.length > 1) {
+            User memory last = Users[Users.length - 1];
+            Users[index] = last;
+            UserIdToIndex[last.id].index = index;
+        }
         Users.pop();
         delete UserIdToIndex[id];
     }

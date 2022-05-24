@@ -16,6 +16,7 @@ type Repository interface {
 	FindAll() ([]User, error)
 	FindOne(int64) (*User, error)
 	Create(*User) error
+	Delete(int64) error
 }
 
 const UsersCount int64 = 10
@@ -106,11 +107,37 @@ func (r *repository) Create(user *User) error {
 	auth := etherium_auth.GetAccountAuth(r.ctx, client, os.Getenv("NODE_USER"))
 
 	// create user
-	ret, err := conn.UsersCreate(auth, user.Name)
-	if err != nil {
+	if _, err := conn.UsersCreate(auth, user.Name); err != nil {
 		return err
 	}
 	//TODO: разобраться как вернуть знаначение из не view функции.
-	fmt.Println(ret)
+	return nil
+}
+
+func (r *repository) Delete(id int64) error {
+	// connect to node
+	client, err := ethclient.Dial(os.Getenv("NODE_HTTP"))
+	if err != nil {
+		fmt.Println("- Dial error")
+		return err
+	}
+	defer client.Close()
+
+	// open contract
+	conn, err := api.NewApi(common.HexToAddress(os.Getenv("CONTRACT_ADRESS")), client)
+	if err != nil {
+		fmt.Println("- Connection to contract error")
+		return err
+	}
+
+	// create auth
+	auth := etherium_auth.GetAccountAuth(r.ctx, client, os.Getenv("NODE_USER"))
+
+	// create user
+	if _, err := conn.UsersDelete(auth, uint64(id)); err != nil {
+		return err
+	}
+	//TODO: почему не работает require? в методе UsersDelete
+	//TODO: разобраться как вернуть знаначение из не view функции.
 	return nil
 }
