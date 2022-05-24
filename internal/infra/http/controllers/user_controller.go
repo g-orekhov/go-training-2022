@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,10 +12,10 @@ import (
 )
 
 type UserController struct {
-	service *user.Service
+	service user.Service
 }
 
-func NewUserController(s *user.Service) *UserController {
+func NewUserController(s user.Service) *UserController {
 	return &UserController{
 		service: s,
 	}
@@ -22,7 +23,7 @@ func NewUserController(s *user.Service) *UserController {
 
 func (c *UserController) FindAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		users, err := (*c.service).FindAll()
+		users, err := c.service.FindAll()
 		if err != nil {
 			fmt.Printf("UserController.FindAll(): %s", err)
 			err = json_response.InternalServerError(w, err)
@@ -50,7 +51,7 @@ func (c *UserController) FindOne() http.HandlerFunc {
 			}
 			return
 		}
-		user, err := (*c.service).FindOne(id)
+		user, err := c.service.FindOne(id)
 		if err != nil {
 			fmt.Printf("UserController.FindOne(): %s", err)
 			err = json_response.InternalServerError(w, err)
@@ -63,6 +64,34 @@ func (c *UserController) FindOne() http.HandlerFunc {
 		err = json_response.Success(w, user)
 		if err != nil {
 			fmt.Printf("UserController.FindOne(): %s", err)
+		}
+	}
+}
+
+func (c *UserController) Create() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var user = new(user.User)
+		// decode json
+		if err := json.NewDecoder(r.Body).Decode(user); err != nil {
+			fmt.Printf("UserController.Create(): %s", err)
+			err = json_response.InternalServerError(w, err)
+			if err != nil {
+				fmt.Printf("UserController.Create(): %s", err)
+			}
+			return
+		}
+		// create record
+		if err := c.service.Create(user); err != nil {
+			fmt.Printf("UserController.Create(): %s", err)
+			err = json_response.InternalServerError(w, err)
+			if err != nil {
+				fmt.Printf("UserController.Create(): %s", err)
+			}
+			return
+		}
+		// return result
+		if err := json_response.Created(w, user); err != nil {
+			fmt.Printf("UserController.Create(): %s", err)
 		}
 	}
 }

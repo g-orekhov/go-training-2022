@@ -59,9 +59,9 @@ func main() {
 	eventController := controllers.NewEventController(eventService)
 	eventRoute := routes.NewEventRoute("/events", eventController)
 	// User
-	userRepository := user.NewRepository()
-	userService := user.NewService(&userRepository)
-	userController := controllers.NewUserController(&userService)
+	userRepository := user.NewRepository(context.Background())
+	userService := user.NewService(userRepository)
+	userController := controllers.NewUserController(userService)
 	userRoute := routes.NewUserRoute("/users", userController)
 
 	// HTTP Server
