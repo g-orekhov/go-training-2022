@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+//TODO: Make refactoring. No Panic!
 func GetAccountAuth(ctx context.Context, client *ethclient.Client, accountAddress string) *bind.TransactOpts {
 
 	privateKey, err := crypto.HexToECDSA(accountAddress)
