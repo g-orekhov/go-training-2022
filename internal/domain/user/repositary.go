@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -112,50 +113,47 @@ func (r *repository) Create(user *User) error {
 		return err
 	}
 
-	// var created chan *api.ApiUserCreated
-	// //TODO: Добавить контекст с таймаутом в WatchOpts{}
-	// ctx, cancel := context.WithTimeout(r.ctx, time.Millisecond*20000) // 10sec timeout
-	// defer cancel()
-	// event, err := conn.WatchUserCreated(
-	// 	&bind.WatchOpts{
-	// 		Start:   nil,
-	// 		Context: ctx,
-	// 	},
-	// 	created,
-	// )
-	// if err != nil {
-	// 	return err
-	// }
-	// defer event.Unsubscribe()
+	created := make(chan *api.ApiUserCreated)
+	ctx, cancel := context.WithTimeout(r.ctx, time.Millisecond*10000) // 10sec timeout
+	defer cancel()
+	event, err := conn.WatchUserCreated(
+		&bind.WatchOpts{
+			Start:   nil,
+			Context: ctx,
+		},
+		created,
+	)
+	if err != nil {
+		return err
+	}
+	defer event.Unsubscribe()
 
-	// //TODO: допилить обработку события.
-	// /*
-	// 	Тут в принципе не понятно, что если произойдёт другое событие?
-	// 	Это ведь подписка на журнал в целом, а не привязка к транзакции.
-	// 	То есть мы должны возвращать не только ID но и например наш адресс,
-	// 	затем зависнуть на итераторе сравнивая адрес, и ждать наше изменение.
+	//TODO: допилить обработку события.
+	/*
+		Тут в принципе не понятно, что если произойдёт другое событие?
+		Это ведь подписка на журнал в целом, а не привязка к транзакции.
+		То есть мы должны возвращать не только ID но и например наш адресс,
+		затем зависнуть на итераторе сравнивая адрес, и ждать именно наше изменение.
 
-	// 	Чем больше смотрю сюда, тем больше вопросов.
-	// 	Лучше просто так не делать и привязывать всё к адресам.
-	// 	Или надо вешать ожидание сообытия в другую горутину, и по результату создавать отдельный
-	// 	обьект в бд с последним айди для клента.
-	// 	Иначе как быть в случае таймаутов с нодой или клиентом.
-	// 	Клиент должен иметь возможность спросить как там дела.
-	// 	Может TxIndex как то может помочь. Надо разбираться.
-	// */
-	// //INFO: HTTP не поддерживает подписки, надо юзать вебсокет.
+		Чем больше смотрю сюда, тем больше вопросов.
+		Лучше просто так не делать и привязывать всё к адресам.
+		Или надо вешать ожидание сообытия в другую горутину, и по результату создавать отдельный
+		обьект в бд с последним айди для клента.
+		Иначе как быть в случае таймаутов с нодой или клиентом.
+		Клиент должен иметь возможность спросить как там дела.
+		Надо разбираться.
+	*/
+	//INFO: HTTP не поддерживает подписки, надо юзать вебсокет.
 
-	// // Это всё не работает :(
-	// select {
-	// case apiUserCreatedPointer := <-created:
-	// 	user.Id = int64(apiUserCreatedPointer.Id)
-	// 	return nil
-	// case err = <-event.Err():
-	// 	return err
-	// case <-ctx.Done():
-	// 	return ctx.Err()
-	// }
-	return nil
+	select {
+	case apiUserCreatedPointer := <-created:
+		user.Id = int64(apiUserCreatedPointer.Id)
+		return nil
+	case err = <-event.Err():
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 func (r *repository) Delete(id int64) error {
