@@ -3,6 +3,7 @@ package etherium_auth
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -12,19 +13,17 @@ import (
 )
 
 //TODO: Make refactoring. No Panic!
-func GetAccountAuth(ctx context.Context, client *ethclient.Client, accountAddress string) *bind.TransactOpts {
+func GetAccountAuth(ctx context.Context, client *ethclient.Client, accountAddress string) (*bind.TransactOpts, error) {
 
 	privateKey, err := crypto.HexToECDSA(accountAddress)
 	if err != nil {
-		println(" - getAccountAuth: 1 - ")
-		panic(err)
+		return nil, err
 	}
 
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		println(" - getAccountAuth: 2 - ")
-		panic("invalid key")
+		return nil, errors.New("invalid key")
 	}
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
@@ -32,24 +31,22 @@ func GetAccountAuth(ctx context.Context, client *ethclient.Client, accountAddres
 	//fetch the last use nonce of account
 	nonce, err := client.PendingNonceAt(ctx, fromAddress)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	fmt.Println("nounce=", nonce)
 	chainID, err := client.ChainID(ctx)
 	if err != nil {
-		println(" - getAccountAuth: 3 - ")
-		panic(err)
+		return nil, err
 	}
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
-		println(" - getAccountAuth: 4 - ")
-		panic(err)
+		return nil, err
 	}
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)      // in wei
 	auth.GasLimit = uint64(3000000) // in units
 	auth.GasPrice = big.NewInt(1000000)
 
-	return auth
+	return auth, nil
 }

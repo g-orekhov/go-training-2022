@@ -22,7 +22,7 @@ func main() {
 	defer client.Close()
 
 	// create auth and transaction package for deploying smart contract
-	auth := etherium_auth.GetAccountAuth(context.Background(), client, os.Getenv("NODE_USER"))
+	auth, _ := etherium_auth.GetAccountAuth(context.Background(), client, os.Getenv("NODE_USER"))
 
 	//deploying smart contract
 	deployedContractAddress, _, _, err := api.DeployApi(auth, client) //api is redirected from api directory from our contract go file
