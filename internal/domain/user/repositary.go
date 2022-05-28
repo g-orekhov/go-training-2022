@@ -2,15 +2,12 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	api "github.com/test_server/internal/contractsAPI"
-	"github.com/test_server/internal/helpers/etherium_auth"
+	eth_methods "github.com/test_server/internal/helpers/etherium"
 )
 
 type Repository interface {
@@ -31,92 +28,62 @@ func NewRepository(ctx context.Context) Repository {
 	return &repository{ctx: ctx}
 }
 
-func (r *repository) FindAll() ([]User, error) {
-	users := make([]User, 0, UsersCount)
-
+func (r *repository) FindAll() (users []User, err error) {
+	users = make([]User, 0, UsersCount)
+	ctx, cancel := context.WithTimeout(r.ctx, time.Millisecond*10000) // 10sec timeout
+	defer cancel()
+	defer eth_methods.TrasferPanicToError(&err)
 	// connect to node
-	client, err := ethclient.Dial(os.Getenv("NODE_HTTP"))
-	if err != nil {
-		fmt.Println("- Dial error")
-		return nil, err
-	}
+	client := eth_methods.ConnectToNode(os.Getenv("NODE_HTTP"))
 	defer client.Close()
-
-	// open contract
-	conn, err := api.NewApi(common.HexToAddress(os.Getenv("CONTRACT_ADRESS")), client)
+	// get contract api
+	contractApi := eth_methods.GetContractApi(client, os.Getenv("CONTRACT_ADRESS"))
+	// get user
+	ret, err := contractApi.UsersGetAll(&bind.CallOpts{Context: ctx})
 	if err != nil {
-		fmt.Println("- Connection to contract error")
 		return nil, err
 	}
-
-	// create user
-	ret, err := conn.UsersGetAll(&bind.CallOpts{})
-	if err != nil {
-		fmt.Println("- Get all")
-		return nil, err
-	}
-
+	// transform returned objects to #User structure
 	for i := 0; i < len(ret); i++ {
 		users = append(users, User{Id: int64(ret[i].Id), Name: ret[i].Name})
 	}
-
 	return users, nil
 }
 
-func (r *repository) FindOne(id int64) (*User, error) {
-	// connect to node
-	client, err := ethclient.Dial(os.Getenv("NODE_HTTP"))
-	if err != nil {
-		fmt.Println("- Dial error")
-		return nil, err
-	}
-	defer client.Close()
-
-	// open contract
-	conn, err := api.NewApi(common.HexToAddress(os.Getenv("CONTRACT_ADRESS")), client)
-	if err != nil {
-		fmt.Println("- Connection to contract error")
-		return nil, err
-	}
-
-	// create user
-	ret, err := conn.UsersGetOne(&bind.CallOpts{}, uint64(id))
-	if err != nil {
-		return nil, err
-	}
-
-	return &User{Id: int64(ret.Id), Name: ret.Name}, err
-}
-
-func (r *repository) Create(user *User) error {
-	// connect to node
-	client, err := ethclient.Dial(os.Getenv("NODE_HTTP"))
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
-	// open contract
-	conn, err := api.NewApi(common.HexToAddress(os.Getenv("CONTRACT_ADRESS")), client)
-	if err != nil {
-		return err
-	}
-
-	// create auth transaction
-	auth, err := etherium_auth.GetAccountAuth(r.ctx, client, os.Getenv("NODE_USER"))
-	if err != nil {
-		return err
-	}
-
-	// create user
-	if _, err := conn.UsersCreate(auth, user.Name); err != nil {
-		return err
-	}
-
-	created := make(chan *api.ApiUserCreated)
+func (r *repository) FindOne(id int64) (user *User, err error) {
 	ctx, cancel := context.WithTimeout(r.ctx, time.Millisecond*10000) // 10sec timeout
 	defer cancel()
-	event, err := conn.WatchUserCreated(
+	defer eth_methods.TrasferPanicToError(&err)
+	// connect to node
+	client := eth_methods.ConnectToNode(os.Getenv("NODE_HTTP"))
+	defer client.Close()
+	// get contract api
+	contractApi := eth_methods.GetContractApi(client, os.Getenv("CONTRACT_ADRESS"))
+	// get user
+	ret, err := contractApi.UsersGetOne(&bind.CallOpts{Context: ctx}, uint64(id))
+	if err != nil {
+		return nil, err
+	}
+	user.Id = int64(ret.Id)
+	user.Name = ret.Name
+	return user, err
+}
+
+func (r *repository) Create(user *User) (err error) {
+	ctx, cancel := context.WithTimeout(r.ctx, time.Millisecond*10000) // 10sec timeout
+	defer cancel()
+	defer eth_methods.TrasferPanicToError(&err)
+	// connect to node
+	client := eth_methods.ConnectToNode(os.Getenv("NODE_HTTP"))
+	defer client.Close()
+	// get contract api
+	contractApi := eth_methods.GetContractApi(client, os.Getenv("CONTRACT_ADRESS"))
+	// create auth transaction
+	transaction := eth_methods.GetAuthorizedTransaction(ctx, client, os.Getenv("NODE_USER"))
+
+	//Subscribe to #UserCreated event
+	created := make(chan *api.ApiUserCreated)
+	event, err := contractApi.WatchUserCreated(
 		&bind.WatchOpts{
 			Start:   nil,
 			Context: ctx,
@@ -127,6 +94,11 @@ func (r *repository) Create(user *User) error {
 		return err
 	}
 	defer event.Unsubscribe()
+
+	// create user
+	if _, err := contractApi.UsersCreate(transaction, user.Name); err != nil {
+		return err
+	}
 
 	//TODO: допилить обработку события.
 	/*
@@ -156,33 +128,20 @@ func (r *repository) Create(user *User) error {
 	}
 }
 
-func (r *repository) Delete(id int64) error {
+func (r *repository) Delete(id int64) (err error) {
+	ctx, cancel := context.WithTimeout(r.ctx, time.Millisecond*10000) // 10sec timeout
+	defer cancel()
+	defer eth_methods.TrasferPanicToError(&err)
 	// connect to node
-	client, err := ethclient.Dial(os.Getenv("NODE_HTTP"))
-	if err != nil {
-		fmt.Println("- Dial error")
-		return err
-	}
+	client := eth_methods.ConnectToNode(os.Getenv("NODE_HTTP"))
 	defer client.Close()
-
-	// open contract
-	conn, err := api.NewApi(common.HexToAddress(os.Getenv("CONTRACT_ADRESS")), client)
-	if err != nil {
-		fmt.Println("- Connection to contract error")
+	// get contract api
+	contractApi := eth_methods.GetContractApi(client, os.Getenv("CONTRACT_ADRESS"))
+	// create auth transaction
+	transaction := eth_methods.GetAuthorizedTransaction(ctx, client, os.Getenv("NODE_USER"))
+	// delete user
+	if _, err := contractApi.UsersDelete(transaction, uint64(id)); err != nil {
 		return err
 	}
-
-	// create auth
-	auth, err := etherium_auth.GetAccountAuth(r.ctx, client, os.Getenv("NODE_USER"))
-	if err != nil {
-		return err
-	}
-
-	// create user
-	if _, err := conn.UsersDelete(auth, uint64(id)); err != nil {
-		return err
-	}
-	//TODO: почему не работает require? в методе UsersDelete
-	//TODO: разобраться как вернуть знаначение из не view функции.
 	return nil
 }
