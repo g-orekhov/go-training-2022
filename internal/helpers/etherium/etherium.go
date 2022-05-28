@@ -54,7 +54,13 @@ func GetAuthorizedTransaction(ctx context.Context, client *ethclient.Client, acc
 
 func TrasferPanicToError(err *error) {
 	if recovery := recover(); recovery != nil {
-		(*err) = errors.New(recovery.(string))
+		if errRecovery, ok := recovery.(error); ok {
+			(*err) = errRecovery
+		}
+		if strRecovery, ok := recovery.(string); ok {
+			(*err) = errors.New(strRecovery)
+		}
+		(*err) = errors.New(fmt.Sprint("Panic in TrasferPanicToError:", recovery))
 	}
 }
 

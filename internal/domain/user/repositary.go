@@ -64,8 +64,7 @@ func (r *repository) FindOne(id int64) (user *User, err error) {
 	if err != nil {
 		return nil, err
 	}
-	user.Id = int64(ret.Id)
-	user.Name = ret.Name
+	user = &User{Id: int64(ret.Id), Name: ret.Name}
 	return user, err
 }
 
